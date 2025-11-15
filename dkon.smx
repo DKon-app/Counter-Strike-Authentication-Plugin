@@ -1,0 +1,74 @@
+#include <sourcemod>
+#include <sdktools>
+#include <curl>
+
+#define API_URL "https://api.dkon.app/api/v3/method/account.signIn"
+
+// Function to handle client commands
+public void OnPluginStart() {
+    RegConsoleCmd("login", Command_Login);
+}
+
+public Action Command_Login(int client, int args) {
+    // Validating client
+    if (!IsClientInGame(client)) {
+        PrintToChat(client, "You must be in-game to login.");
+        return Action::Continue;
+    }
+
+    // Example: Retrieve username and password for login
+    char username[64];
+    char password[64];
+    
+    // Here you would normally retrieve the credentials securely. This is a placeholder.
+    GetClientUserId(client); // Replace with actual user input methods.
+
+    // Call the API for authentication
+    AuthenticateUser(username, password, client);
+    
+    return Action::Continue;
+}
+
+// Function to authenticate user using DKon API
+public void AuthenticateUser(const char[] username, const char[] password, int client) {
+    // Prepare the POST request
+    char postData[256];
+    Format(postData, sizeof(postData), "clientId=1302&username=%s&password=%s", username, password);
+
+    // Send request to the API
+    Handle request = CreateHTTP();
+    HTTPSetURL(request, API_URL);
+    HTTPSetMethod(request, "POST");
+    HTTPSetData(request, postData);
+    
+    // Set the response callback
+    HTTPSetResponseCallback(request, ResponseCallback, client);
+    
+    // Execute the request
+    HTTPRequest(request);
+}
+
+// Callback function to process API response
+public void ResponseCallback(Handle request, int statusCode, const char[] responseData, int client) {
+    if (statusCode != 200) {
+        PrintToChat(client, "An error occurred while logging in.");
+        return;
+    }
+    
+    // Parse the response (you would need a JSON parser here)
+    // Assuming responseData is like: {"error": false, "accessToken": "...", "accountId": "..."}
+    bool error = false; // (Parse the JSON response)
+    char accessToken[128]; // (Parse the access token from JSON)
+    char accountId[64];    // (Parse the account ID from JSON)
+
+    if (error) {
+        PrintToChat(client, "Login failed. Please check your credentials.");
+    } else {
+        // On success
+        PrintToChat(client, "Login successful! Welcome.");
+        
+        // Here, store the access token and perform any additional logic
+    }
+    
+    FreeHTTP(request); // Freeing the request handle
+}
